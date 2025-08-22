@@ -352,7 +352,7 @@ std::vector<ObsPtr> UbloxMessageProcessor::parse_meas_msg(const uint8_t *msg_dat
                         halfc != halfc_rec[sat-1][sid-1];
         lock_time_rec[sat-1][sid-1] = lock_time * 1e-3;
         halfc_rec[sat-1][sid-1] = halfc;
-        uint8_t LLI = (slip ? LLI_SLIP : 0) | (!halfv ? LLI_HALFC : 0);
+        uint8_t LLI = (slip ? UBX_LLI_SLIP : 0) | (!halfv ? UBX_LLI_HALFC : 0);
         if (sat2idx.count(sat) == 0)
         {
             ObsPtr obs(new Obs());
@@ -482,33 +482,33 @@ int UbloxMessageProcessor::decode_GLO_ephem(GloEphemPtr glo_ephem)
     tk_h                =getbitu(buff,i, 5);           i+= 5;
     tk_m                =getbitu(buff,i, 6);           i+= 6;
     tk_s                =getbitu(buff,i, 1)*30;        i+= 1;
-    glo_ephem->vel[0]   =getbitg(buff,i,24)*P2_20*1E3; i+=24;
-    glo_ephem->acc[0]   =getbitg(buff,i, 5)*P2_30*1E3; i+= 5;
-    glo_ephem->pos[0]   =getbitg(buff,i,27)*P2_11*1E3; i+=27+4;
+    glo_ephem->vel[0]   =getbitg(buff,i,24)*UBX_P2_20*1E3; i+=24;
+    glo_ephem->acc[0]   =getbitg(buff,i, 5)*UBX_P2_30*1E3; i+= 5;
+    glo_ephem->pos[0]   =getbitg(buff,i,27)*UBX_P2_11*1E3; i+=27+4;
     
     /* frame 2 */
     frn2                =getbitu(buff,i, 4);           i+= 4;
     glo_ephem->health   =getbitu(buff,i, 3);           i+= 3;
                          getbitu(buff,i, 1);           i+= 1;       // skip
     tb                  =getbitu(buff,i, 7);           i+= 7+5;
-    glo_ephem->vel[1]   =getbitg(buff,i,24)*P2_20*1E3; i+=24;
-    glo_ephem->acc[1]   =getbitg(buff,i, 5)*P2_30*1E3; i+= 5;
-    glo_ephem->pos[1]   =getbitg(buff,i,27)*P2_11*1E3; i+=27+4;
+    glo_ephem->vel[1]   =getbitg(buff,i,24)*UBX_P2_20*1E3; i+=24;
+    glo_ephem->acc[1]   =getbitg(buff,i, 5)*UBX_P2_30*1E3; i+= 5;
+    glo_ephem->pos[1]   =getbitg(buff,i,27)*UBX_P2_11*1E3; i+=27+4;
     
     /* frame 3 */
     frn3                =getbitu(buff,i, 4);           i+= 4;
                          getbitu(buff,i, 1);           i+= 1;       // skip
-    glo_ephem->gamma    =getbitg(buff,i,11)*P2_40;     i+=11+1;
+    glo_ephem->gamma    =getbitg(buff,i,11)*UBX_P2_40;     i+=11+1;
                          getbitu(buff,i, 2);           i+= 2;       // skip
                          getbitu(buff,i, 1);           i+= 1;       // skip
-    glo_ephem->vel[2]   =getbitg(buff,i,24)*P2_20*1E3; i+=24;
-    glo_ephem->acc[2]   =getbitg(buff,i, 5)*P2_30*1E3; i+= 5;
-    glo_ephem->pos[2]   =getbitg(buff,i,27)*P2_11*1E3; i+=27+4;
+    glo_ephem->vel[2]   =getbitg(buff,i,24)*UBX_P2_20*1E3; i+=24;
+    glo_ephem->acc[2]   =getbitg(buff,i, 5)*UBX_P2_30*1E3; i+= 5;
+    glo_ephem->pos[2]   =getbitg(buff,i,27)*UBX_P2_11*1E3; i+=27+4;
     
     /* frame 4 */
     frn4                    =getbitu(buff,i, 4);           i+= 4;
-    glo_ephem->tau_n        =getbitg(buff,i,22)*P2_30;     i+=22;
-    glo_ephem->delta_tau_n  =getbitg(buff,i, 5)*P2_30;     i+= 5;
+    glo_ephem->tau_n        =getbitg(buff,i,22)*UBX_P2_30;     i+=22;
+    glo_ephem->delta_tau_n  =getbitg(buff,i, 5)*UBX_P2_30;     i+= 5;
     glo_ephem->age          =getbitu(buff,i, 5);           i+= 5+14;
                              getbitu(buff,i, 1);           i+= 1;   // skip
     uint32_t ft             =getbitu(buff,i, 4);           i+= 4+3;
@@ -624,7 +624,7 @@ int UbloxMessageProcessor::decode_BDS_D2_ephem(EphemPtr ephem)
     i=8*38*2; /* page 3 */
     pgn3            =getbitu (buff,i+ 42, 4);
     sow3            =getbitu2(buff,i+ 18, 8,i+ 30,12);
-    ephem->af0      =getbits2(buff,i+100,12,i+120,12)*P2_33;
+    ephem->af0      =getbits2(buff,i+100,12,i+120,12)*UBX_P2_33;
     f1p3            =getbits (buff,i+132,4);
     
     i=8*38*3; /* page 4 */
@@ -633,22 +633,22 @@ int UbloxMessageProcessor::decode_BDS_D2_ephem(EphemPtr ephem)
     f1p4            =getbitu2(buff,i+ 46, 6,i+ 60,12);
     ephem->af2      =getbits2(buff,i+ 72,10,i+ 90, 1)*P2_66;
     ephem->iode     =getbitu (buff,i+ 91, 5); /* AODE */
-    ephem->delta_n  =getbits (buff,i+ 96,16)*P2_43*SC2RAD;
+    ephem->delta_n  =getbits (buff,i+ 96,16)*UBX_P2_43*SC2RAD;
     cucp4           =getbits (buff,i+120,14);
     
     i=8*38*4; /* page 5 */
     pgn5            =getbitu (buff,i+ 42, 4);
     sow5            =getbitu2(buff,i+ 18, 8,i+ 30,12);
     cucp5           =getbitu (buff,i+ 46, 4);
-    ephem->M0       =getbits3(buff,i+ 50, 2,i+ 60,22,i+ 90, 8)*P2_31*SC2RAD;
-    ephem->cus      =getbits2(buff,i+ 98,14,i+120, 4)*P2_31;
+    ephem->M0       =getbits3(buff,i+ 50, 2,i+ 60,22,i+ 90, 8)*UBX_P2_31*SC2RAD;
+    ephem->cus      =getbits2(buff,i+ 98,14,i+120, 4)*UBX_P2_31;
     ep5             =getbits (buff,i+124,10);
     
     i=8*38*5; /* page 6 */
     pgn6            =getbitu (buff,i+ 42, 4);
     sow6            =getbitu2(buff,i+ 18, 8,i+ 30,12);
     ep6             =getbitu2(buff,i+ 46, 6,i+ 60,16);
-    sqrtA           =getbitu3(buff,i+ 76, 6,i+ 90,22,i+120,4)*P2_19;
+    sqrtA           =getbitu3(buff,i+ 76, 6,i+ 90,22,i+120,4)*UBX_P2_19;
     cicp6           =getbits (buff,i+124,10);
     ephem->A        =sqrtA*sqrtA;
     
@@ -656,7 +656,7 @@ int UbloxMessageProcessor::decode_BDS_D2_ephem(EphemPtr ephem)
     pgn7            =getbitu (buff,i+ 42, 4);
     sow7            =getbitu2(buff,i+ 18, 8,i+ 30,12);
     cicp7           =getbitu2(buff,i+ 46, 6,i+ 60, 2);
-    ephem->cis      =getbits (buff,i+ 62,18)*P2_31;
+    ephem->cis      =getbits (buff,i+ 62,18)*UBX_P2_31;
     toes            =getbitu2(buff,i+ 80, 2,i+ 90,15)*8.0;
     i0p7            =getbits2(buff,i+105, 7,i+120,14);
     
@@ -664,22 +664,22 @@ int UbloxMessageProcessor::decode_BDS_D2_ephem(EphemPtr ephem)
     pgn8            =getbitu (buff,i+ 42, 4);
     sow8            =getbitu2(buff,i+ 18, 8,i+ 30,12);
     i0p8            =getbitu2(buff,i+ 46, 6,i+ 60, 5);
-    ephem->crc      =getbits2(buff,i+ 65,17,i+ 90, 1)*P2_6;
-    ephem->crs      =getbits (buff,i+ 91,18)*P2_6;
+    ephem->crc      =getbits2(buff,i+ 65,17,i+ 90, 1)*UBX_P2_6;
+    ephem->crs      =getbits (buff,i+ 91,18)*UBX_P2_6;
     OMGdp8          =getbits2(buff,i+109, 3,i+120,16);
     
     i=8*38*8; /* page 9 */
     pgn9            =getbitu (buff,i+ 42, 4);
     sow9            =getbitu2(buff,i+ 18, 8,i+ 30,12);
     OMGdp9          =getbitu (buff,i+ 46, 5);
-    ephem->OMG0     =getbits3(buff,i+ 51, 1,i+ 60,22,i+ 90, 9)*P2_31*SC2RAD;
+    ephem->OMG0     =getbits3(buff,i+ 51, 1,i+ 60,22,i+ 90, 9)*UBX_P2_31*SC2RAD;
     omgp9           =getbits2(buff,i+ 99,13,i+120,14);
     
     i=8*38*9; /* page 10 */
     pgn10           =getbitu (buff,i+ 42, 4);
     sow10           =getbitu2(buff,i+ 18, 8,i+ 30,12);
     omgp10          =getbitu (buff,i+ 46, 5);
-    ephem->i_dot    =getbits2(buff,i+ 51, 1,i+ 60,13)*P2_43*SC2RAD;
+    ephem->i_dot    =getbits2(buff,i+ 51, 1,i+ 60,13)*UBX_P2_43*SC2RAD;
     
     /* check consistency of page numbers, sows and toe/toc */
     if (pgn1!=1||pgn3!=3||pgn4!=4||pgn5!=5||pgn6!=6||pgn7!=7||pgn8!=8||pgn9!=9||
@@ -700,13 +700,13 @@ int UbloxMessageProcessor::decode_BDS_D2_ephem(EphemPtr ephem)
         LOG(ERROR) << "decode_bds_d2 error: toe=" << toes << " toc=" << toc_bds;
         return -1;
     }
-    ephem->af1      = merge_two_s(f1p3  ,f1p4  ,18)*P2_50;
-    ephem->cuc      = merge_two_s(cucp4 ,cucp5 , 4)*P2_31;
-    ephem->e        = merge_two_s(ep5   ,ep6   ,22)*P2_33;
-    ephem->cic      = merge_two_s(cicp6 ,cicp7 , 8)*P2_31;
-    ephem->i0       = merge_two_s(i0p7  ,i0p8  ,11)*P2_31*SC2RAD;
-    ephem->OMG_dot  = merge_two_s(OMGdp8,OMGdp9, 5)*P2_43*SC2RAD;
-    ephem->omg      = merge_two_s(omgp9 ,omgp10, 5)*P2_31*SC2RAD;
+    ephem->af1      = merge_two_s(f1p3  ,f1p4  ,18)*UBX_P2_50;
+    ephem->cuc      = merge_two_s(cucp4 ,cucp5 , 4)*UBX_P2_31;
+    ephem->e        = merge_two_s(ep5   ,ep6   ,22)*UBX_P2_33;
+    ephem->cic      = merge_two_s(cicp6 ,cicp7 , 8)*UBX_P2_31;
+    ephem->i0       = merge_two_s(i0p7  ,i0p8  ,11)*UBX_P2_31*SC2RAD;
+    ephem->OMG_dot  = merge_two_s(OMGdp8,OMGdp9, 5)*UBX_P2_43*SC2RAD;
+    ephem->omg      = merge_two_s(omgp9 ,omgp10, 5)*UBX_P2_31*SC2RAD;
     
     ephem->ttr      = bdt2time(bdt_week,sow1);
     ephem->ttr      = time_add(ephem->ttr, 14.0);
@@ -741,30 +741,30 @@ int UbloxMessageProcessor::decode_BDS_D1_ephem(EphemPtr ephem, std::vector<doubl
     toc_bds         =getbitu2(buff,i+ 73, 9,i+ 90, 8)*8.0;
     ephem->tgd[0]   =getbits (buff,i+ 98,10)*0.1*1E-9;
     ephem->tgd[1]   =getbits2(buff,i+108, 4,i+120, 6)*0.1*1E-9;
-    tmp_iono_params.push_back(getbits (buff, i+126, 8)*P2_30);
-    tmp_iono_params.push_back(getbits (buff, i+134, 8)*P2_27);
-    tmp_iono_params.push_back(getbits (buff, i+150, 8)*P2_24);
-    tmp_iono_params.push_back(getbits (buff, i+158, 8)*P2_24);
+    tmp_iono_params.push_back(getbits (buff, i+126, 8)*UBX_P2_30);
+    tmp_iono_params.push_back(getbits (buff, i+134, 8)*UBX_P2_27);
+    tmp_iono_params.push_back(getbits (buff, i+150, 8)*UBX_P2_24);
+    tmp_iono_params.push_back(getbits (buff, i+158, 8)*UBX_P2_24);
     tmp_iono_params.push_back(getbits2(buff,i+166, 6,i+180, 2)*(1<<11));
     tmp_iono_params.push_back(getbits (buff, i+182, 8)*(1<<14));
     tmp_iono_params.push_back(getbits (buff, i+190, 8)*(1<<16));
     tmp_iono_params.push_back(getbits2(buff,i+198, 4,i+210, 4)*(1<<16));
     ephem->af2      =getbits (buff,i+214,11)*P2_66;
-    ephem->af0      =getbits2(buff,i+225, 7,i+240,17)*P2_33;
-    ephem->af1      =getbits2(buff,i+257, 5,i+270,17)*P2_50;
+    ephem->af0      =getbits2(buff,i+225, 7,i+240,17)*UBX_P2_33;
+    ephem->af1      =getbits2(buff,i+257, 5,i+270,17)*UBX_P2_50;
     ephem->iode     =getbitu (buff,i+287, 5); /* AODE */
     
     i=8*38*1; /* subframe 2 */
     frn2            =getbitu (buff,i+ 15, 3);
     sow2            =getbitu2(buff,i+ 18, 8,i+30,12);
-    ephem->delta_n  =getbits2(buff,i+ 42,10,i+ 60, 6)*P2_43*SC2RAD;
-    ephem->cuc      =getbits2(buff,i+ 66,16,i+ 90, 2)*P2_31;
-    ephem->M0       =getbits2(buff,i+ 92,20,i+120,12)*P2_31*SC2RAD;
-    ephem->e        =getbitu2(buff,i+132,10,i+150,22)*P2_33;
-    ephem->cus      =getbits (buff,i+180,18)*P2_31;
-    ephem->crc      =getbits2(buff,i+198, 4,i+210,14)*P2_6;
-    ephem->crs      =getbits2(buff,i+224, 8,i+240,10)*P2_6;
-    sqrtA           =getbitu2(buff,i+250,12,i+270,20)*P2_19;
+    ephem->delta_n  =getbits2(buff,i+ 42,10,i+ 60, 6)*UBX_P2_43*SC2RAD;
+    ephem->cuc      =getbits2(buff,i+ 66,16,i+ 90, 2)*UBX_P2_31;
+    ephem->M0       =getbits2(buff,i+ 92,20,i+120,12)*UBX_P2_31*SC2RAD;
+    ephem->e        =getbitu2(buff,i+132,10,i+150,22)*UBX_P2_33;
+    ephem->cus      =getbits (buff,i+180,18)*UBX_P2_31;
+    ephem->crc      =getbits2(buff,i+198, 4,i+210,14)*UBX_P2_6;
+    ephem->crs      =getbits2(buff,i+224, 8,i+240,10)*UBX_P2_6;
+    sqrtA           =getbitu2(buff,i+250,12,i+270,20)*UBX_P2_19;
     toe1            =getbitu (buff,i+290, 2); /* TOE 2-MSB */
     ephem->A        =sqrtA*sqrtA;
     
@@ -772,13 +772,13 @@ int UbloxMessageProcessor::decode_BDS_D1_ephem(EphemPtr ephem, std::vector<doubl
     frn3            =getbitu (buff,i+ 15, 3);
     sow3            =getbitu2(buff,i+ 18, 8,i+30,12);
     toe2            =getbitu2(buff,i+ 42,10,i+ 60, 5); /* TOE 5-LSB */
-    ephem->i0       =getbits2(buff,i+ 65,17,i+ 90,15)*P2_31*SC2RAD;
-    ephem->cic      =getbits2(buff,i+105, 7,i+120,11)*P2_31;
-    ephem->OMG_dot  =getbits2(buff,i+131,11,i+150,13)*P2_43*SC2RAD;
-    ephem->cis      =getbits2(buff,i+163, 9,i+180, 9)*P2_31;
-    ephem->i_dot    =getbits2(buff,i+189,13,i+210, 1)*P2_43*SC2RAD;
-    ephem->OMG0     =getbits2(buff,i+211,21,i+240,11)*P2_31*SC2RAD;
-    ephem->omg      =getbits2(buff,i+251,11,i+270,21)*P2_31*SC2RAD;
+    ephem->i0       =getbits2(buff,i+ 65,17,i+ 90,15)*UBX_P2_31*SC2RAD;
+    ephem->cic      =getbits2(buff,i+105, 7,i+120,11)*UBX_P2_31;
+    ephem->OMG_dot  =getbits2(buff,i+131,11,i+150,13)*UBX_P2_43*SC2RAD;
+    ephem->cis      =getbits2(buff,i+163, 9,i+180, 9)*UBX_P2_31;
+    ephem->i_dot    =getbits2(buff,i+189,13,i+210, 1)*UBX_P2_43*SC2RAD;
+    ephem->OMG0     =getbits2(buff,i+211,21,i+240,11)*UBX_P2_31*SC2RAD;
+    ephem->omg      =getbits2(buff,i+251,11,i+270,21)*UBX_P2_31*SC2RAD;
     toes            =merge_two_u(toe1,toe2,15)*8.0;
     
     /* check consistency of subframe numbers, sows and toe/toc */
@@ -885,27 +885,27 @@ int UbloxMessageProcessor::decode_GAL_ephem(EphemPtr ephem)
     type[1]    =getbitu(buff,i, 6);              i+= 6;
     iod_nav[0] =getbitu(buff,i,10);              i+=10;
     toes       =getbitu(buff,i,14)*60.0;         i+=14;
-    ephem->M0  =getbits(buff,i,32)*P2_31*SC2RAD; i+=32;
-    ephem->e   =getbitu(buff,i,32)*P2_33;        i+=32;
-    sqrtA      =getbitu(buff,i,32)*P2_19;
+    ephem->M0  =getbits(buff,i,32)*UBX_P2_31*SC2RAD; i+=32;
+    ephem->e   =getbitu(buff,i,32)*UBX_P2_33;        i+=32;
+    sqrtA      =getbitu(buff,i,32)*UBX_P2_19;
     
     i=128*2; /* word type 2 */
     type[2]    =getbitu(buff,i, 6);              i+= 6;
     iod_nav[1] =getbitu(buff,i,10);              i+=10;
-    ephem->OMG0=getbits(buff,i,32)*P2_31*SC2RAD; i+=32;
-    ephem->i0  =getbits(buff,i,32)*P2_31*SC2RAD; i+=32;
-    ephem->omg =getbits(buff,i,32)*P2_31*SC2RAD; i+=32;
-    ephem->i_dot=getbits(buff,i,14)*P2_43*SC2RAD;
+    ephem->OMG0=getbits(buff,i,32)*UBX_P2_31*SC2RAD; i+=32;
+    ephem->i0  =getbits(buff,i,32)*UBX_P2_31*SC2RAD; i+=32;
+    ephem->omg =getbits(buff,i,32)*UBX_P2_31*SC2RAD; i+=32;
+    ephem->i_dot=getbits(buff,i,14)*UBX_P2_43*SC2RAD;
     
     i=128*3; /* word type 3 */
     type[3]         =getbitu(buff,i, 6);              i+= 6;
     iod_nav[2]      =getbitu(buff,i,10);              i+=10;
-    ephem->OMG_dot  =getbits(buff,i,24)*P2_43*SC2RAD; i+=24;
-    ephem->delta_n  =getbits(buff,i,16)*P2_43*SC2RAD; i+=16;
-    ephem->cuc      =getbits(buff,i,16)*P2_29;        i+=16;
-    ephem->cus      =getbits(buff,i,16)*P2_29;        i+=16;
-    ephem->crc      =getbits(buff,i,16)*P2_5;         i+=16;
-    ephem->crs      =getbits(buff,i,16)*P2_5;         i+=16;
+    ephem->OMG_dot  =getbits(buff,i,24)*UBX_P2_43*SC2RAD; i+=24;
+    ephem->delta_n  =getbits(buff,i,16)*UBX_P2_43*SC2RAD; i+=16;
+    ephem->cuc      =getbits(buff,i,16)*UBX_P2_29;        i+=16;
+    ephem->cus      =getbits(buff,i,16)*UBX_P2_29;        i+=16;
+    ephem->crc      =getbits(buff,i,16)*UBX_P2_5;         i+=16;
+    ephem->crs      =getbits(buff,i,16)*UBX_P2_5;         i+=16;
     uint32_t sisa   =getbitu(buff,i, 8);
     if (sisa < 50)       ephem->ura = 0.01*sisa;
     else if (sisa < 75)  ephem->ura = 0.5+0.02*(sisa-50);
@@ -917,17 +917,17 @@ int UbloxMessageProcessor::decode_GAL_ephem(EphemPtr ephem)
     type[4]         =getbitu(buff,i, 6);              i+= 6;
     iod_nav[3]      =getbitu(buff,i,10);              i+=10;
     svid            =getbitu(buff,i, 6);              i+= 6;
-    ephem->cic      =getbits(buff,i,16)*P2_29;        i+=16;
-    ephem->cis      =getbits(buff,i,16)*P2_29;        i+=16;
+    ephem->cic      =getbits(buff,i,16)*UBX_P2_29;        i+=16;
+    ephem->cis      =getbits(buff,i,16)*UBX_P2_29;        i+=16;
     toc             =getbitu(buff,i,14)*60.0;         i+=14;
-    ephem->af0      =getbits(buff,i,31)*P2_34;        i+=31;
-    ephem->af1      =getbits(buff,i,21)*P2_46;        i+=21;
+    ephem->af0      =getbits(buff,i,31)*UBX_P2_34;        i+=31;
+    ephem->af1      =getbits(buff,i,21)*UBX_P2_46;        i+=21;
     ephem->af2      =getbits(buff,i, 6)*P2_59;
     
     i=128*5; /* word type 5 */
     type[5]         =getbitu(buff,i, 6);              i+= 6+41;
-    ephem->tgd[0]   =getbits(buff,i,10)*P2_32;        i+=10; /* BGD E5a/E1 */
-    ephem->tgd[1]   =getbits(buff,i,10)*P2_32;        i+=10; /* BGD E5b/E1 */
+    ephem->tgd[0]   =getbits(buff,i,10)*UBX_P2_32;        i+=10; /* BGD E5a/E1 */
+    ephem->tgd[1]   =getbits(buff,i,10)*UBX_P2_32;        i+=10; /* BGD E5b/E1 */
     e5b_hs          =getbitu(buff,i, 2);              i+= 2;
     e1b_hs          =getbitu(buff,i, 2);              i+= 2;
     e5b_dvs         =getbitu(buff,i, 1);              i+= 1;
@@ -1037,11 +1037,11 @@ int UbloxMessageProcessor::decode_GPS_ephem(EphemPtr ephem)
     int tgd             = getbits(frame_buf, off, 8);           off += 8;
     uint32_t iodc1      = getbitu(frame_buf, off, 8);           off += 8;
     double toc          = getbitu(frame_buf, off, 16) * 16.0;   off += 16;
-    ephem->af2          = getbits(frame_buf, off, 8)  * P2_55;  off += 8;
-    ephem->af1          = getbits(frame_buf, off, 16) * P2_43;  off += 16;
-    ephem->af0          = getbits(frame_buf, off, 22) * P2_31;
+    ephem->af2          = getbits(frame_buf, off, 8)  * UBX_P2_55;  off += 8;
+    ephem->af1          = getbits(frame_buf, off, 16) * UBX_P2_43;  off += 16;
+    ephem->af0          = getbits(frame_buf, off, 22) * UBX_P2_31;
 
-    ephem->tgd[0]       = (tgd == -128 ? 0.0 : tgd*P2_31);
+    ephem->tgd[0]       = (tgd == -128 ? 0.0 : tgd*UBX_P2_31);
     ephem->iodc         = (iodc0<<8) + iodc1;
     // ephem->week      = adjgpsweek(week);
     ephem->week         = week + 1024 * GPS_WEEK_ROLLOVER_N;     // adjust GPS week
@@ -1052,28 +1052,28 @@ int UbloxMessageProcessor::decode_GPS_ephem(EphemPtr ephem)
     frame_buf += 30;
     off = 48;
     ephem->iode         = getbitu(frame_buf, off, 8);                   off += 8;
-    ephem->crs          = getbits(frame_buf, off, 16) * P2_5;           off += 16;
-    ephem->delta_n      = getbits(frame_buf, off, 16) * P2_43*SC2RAD;   off += 16;
-    ephem->M0           = getbits(frame_buf, off, 32) * P2_31*SC2RAD;   off += 32;
-    ephem->cuc          = getbits(frame_buf, off, 16) * P2_29;          off += 16;
-    ephem->e            = getbitu(frame_buf, off, 32) * P2_33;          off += 32;
-    ephem->cus          = getbits(frame_buf, off, 16) * P2_29;          off += 16;
-    double sqrtA        = getbitu(frame_buf, off, 32) * P2_19;          off += 32;
+    ephem->crs          = getbits(frame_buf, off, 16) * UBX_P2_5;           off += 16;
+    ephem->delta_n      = getbits(frame_buf, off, 16) * UBX_P2_43*SC2RAD;   off += 16;
+    ephem->M0           = getbits(frame_buf, off, 32) * UBX_P2_31*SC2RAD;   off += 32;
+    ephem->cuc          = getbits(frame_buf, off, 16) * UBX_P2_29;          off += 16;
+    ephem->e            = getbitu(frame_buf, off, 32) * UBX_P2_33;          off += 32;
+    ephem->cus          = getbits(frame_buf, off, 16) * UBX_P2_29;          off += 16;
+    double sqrtA        = getbitu(frame_buf, off, 32) * UBX_P2_19;          off += 32;
     ephem->toe_tow      = getbitu(frame_buf, off, 16) * 16.0;           off += 16;
     ephem->A            = sqrtA * sqrtA;
 
     // decode subframe 3
     frame_buf += 30;
     off = 48;
-    ephem->cic          = getbits(frame_buf, off, 16) * P2_29;          off += 16;
-    ephem->OMG0         = getbits(frame_buf, off, 32) * P2_31*SC2RAD;   off += 32;
-    ephem->cis          = getbits(frame_buf, off, 16) * P2_29;          off += 16;
-    ephem->i0           = getbits(frame_buf, off, 32) * P2_31*SC2RAD;   off += 32;
-    ephem->crc          = getbits(frame_buf, off, 16) * P2_5;           off += 16;
-    ephem->omg          = getbits(frame_buf, off, 32) * P2_31*SC2RAD;   off += 32;
-    ephem->OMG_dot      = getbits(frame_buf, off, 24) * P2_43*SC2RAD;   off += 24;
+    ephem->cic          = getbits(frame_buf, off, 16) * UBX_P2_29;          off += 16;
+    ephem->OMG0         = getbits(frame_buf, off, 32) * UBX_P2_31*SC2RAD;   off += 32;
+    ephem->cis          = getbits(frame_buf, off, 16) * UBX_P2_29;          off += 16;
+    ephem->i0           = getbits(frame_buf, off, 32) * UBX_P2_31*SC2RAD;   off += 32;
+    ephem->crc          = getbits(frame_buf, off, 16) * UBX_P2_5;           off += 16;
+    ephem->omg          = getbits(frame_buf, off, 32) * UBX_P2_31*SC2RAD;   off += 32;
+    ephem->OMG_dot      = getbits(frame_buf, off, 24) * UBX_P2_43*SC2RAD;   off += 24;
     uint32_t iode       = getbitu(frame_buf, off, 8);                   off += 8;
-    ephem->i_dot        = getbits(frame_buf, off, 14) * P2_43*SC2RAD;
+    ephem->i_dot        = getbits(frame_buf, off, 14) * UBX_P2_43*SC2RAD;
 
     /* check iode and iodc consistency */
     if (iode != ephem->iode || iode != (ephem->iodc & 0xFF)) return -1;

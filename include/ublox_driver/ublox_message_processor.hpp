@@ -119,7 +119,7 @@ class UbloxMessageProcessor
         double  lock_time_rec[MAX_SAT][N_FREQ]; /* lock time (s) */
         uint8_t halfc_rec[MAX_SAT][N_FREQ];    /* half-cycle add flag */
         uint8_t subfrm[MAX_SAT][380];     /* subframe buffer */
-        gtime_t curr_time;
+        gnss_comm::gtime_t curr_time;
         ros::NodeHandle nh_;
         ros::Publisher pub_pvt_, pub_lla_;
         ros::Publisher pub_tp_info_;
@@ -140,8 +140,8 @@ class UbloxMessageProcessor
         static constexpr uint32_t UBX_PVT_PAYLOAD_LEN = 92;
 
         static constexpr uint8_t CPSTD_VALID = 10;         // carrier-phase std threshold for cycle clip detection
-        static constexpr uint8_t LLI_SLIP = 0x01;          // LLI: cycle-slip
-        static constexpr uint8_t LLI_HALFC = 0x02;         // LLI: half-cycle not resovled
+        static constexpr uint8_t UBX_LLI_SLIP = 0x01;          // LLI: cycle-slip
+        static constexpr uint8_t UBX_LLI_HALFC = 0x02;         // LLI: half-cycle not resovled
         static constexpr double lam_carr[MAXFREQ]=         // carrier wave length (m)
         {        
             LIGHT_SPEED/FREQ1,LIGHT_SPEED/FREQ2,LIGHT_SPEED/FREQ5,LIGHT_SPEED/FREQ6,LIGHT_SPEED/FREQ7,
@@ -150,32 +150,32 @@ class UbloxMessageProcessor
         static constexpr uint8_t GPS_WEEK_ROLLOVER_N = 2;  // TODO: assuming 2 GPS week rollovers
         static constexpr uint8_t PREAMB_CNAV = 0x8B;      // cnav preamble
 
-        static constexpr double P2_5  = 0.03125;               // 2^-5
-        static constexpr double P2_6  = 0.015625;              // 2^-6
-        static constexpr double P2_11 = 4.882812500000000E-04; // 2^-11
-        static constexpr double P2_15 = 3.051757812500000E-05; // 2^-15
-        static constexpr double P2_17 = 7.629394531250000E-06; // 2^-17
-        static constexpr double P2_19 = 1.907348632812500E-06; // 2^-19
-        static constexpr double P2_20 = 9.536743164062500E-07; // 2^-20
-        static constexpr double P2_21 = 4.768371582031250E-07; // 2^-21
-        static constexpr double P2_23 = 1.192092895507810E-07; // 2^-23
-        static constexpr double P2_24 = 5.960464477539063E-08; // 2^-24
-        static constexpr double P2_27 = 7.450580596923828E-09; // 2^-27
-        static constexpr double P2_29 = 1.862645149230957E-09; // 2^-29
-        static constexpr double P2_30 = 9.313225746154785E-10; // 2^-30
-        static constexpr double P2_31 = 4.656612873077393E-10; // 2^-31
-        static constexpr double P2_32 = 2.328306436538696E-10; // 2^-32
-        static constexpr double P2_33 = 1.164153218269348E-10; // 2^-33
-        static constexpr double P2_34 = 5.820766091346740E-11; // 2^-34
-        static constexpr double P2_35 = 2.910383045673370E-11; // 2^-35
-        static constexpr double P2_38 = 3.637978807091710E-12; // 2^-38
-        static constexpr double P2_39 = 1.818989403545856E-12; // 2^-39
-        static constexpr double P2_40 = 9.094947017729280E-13; // 2^-40
-        static constexpr double P2_43 = 1.136868377216160E-13; // 2^-43
-        static constexpr double P2_46 = 1.421085471520200E-14; // 2^-46
-        static constexpr double P2_48 = 3.552713678800501E-15; // 2^-48
-        static constexpr double P2_50 = 8.881784197001252E-16; // 2^-50
-        static constexpr double P2_55 = 2.775557561562891E-17; // 2^-55
+        static constexpr double UBX_P2_5  = 0.03125;               // 2^-5
+        static constexpr double UBX_P2_6  = 0.015625;              // 2^-6
+        static constexpr double UBX_P2_11 = 4.882812500000000E-04; // 2^-11
+        static constexpr double UBX_P2_15 = 3.051757812500000E-05; // 2^-15
+        static constexpr double UBX_P2_17 = 7.629394531250000E-06; // 2^-17
+        static constexpr double UBX_P2_19 = 1.907348632812500E-06; // 2^-19
+        static constexpr double UBX_P2_20 = 9.536743164062500E-07; // 2^-20
+        static constexpr double UBX_P2_21 = 4.768371582031250E-07; // 2^-21
+        static constexpr double UBX_P2_23 = 1.192092895507810E-07; // 2^-23
+        static constexpr double UBX_P2_24 = 5.960464477539063E-08; // 2^-24
+        static constexpr double UBX_P2_27 = 7.450580596923828E-09; // 2^-27
+        static constexpr double UBX_P2_29 = 1.862645149230957E-09; // 2^-29
+        static constexpr double UBX_P2_30 = 9.313225746154785E-10; // 2^-30
+        static constexpr double UBX_P2_31 = 4.656612873077393E-10; // 2^-31
+        static constexpr double UBX_P2_32 = 2.328306436538696E-10; // 2^-32
+        static constexpr double UBX_P2_33 = 1.164153218269348E-10; // 2^-33
+        static constexpr double UBX_P2_34 = 5.820766091346740E-11; // 2^-34
+        static constexpr double UBX_P2_35 = 2.910383045673370E-11; // 2^-35
+        static constexpr double UBX_P2_38 = 3.637978807091710E-12; // 2^-38
+        static constexpr double UBX_P2_39 = 1.818989403545856E-12; // 2^-39
+        static constexpr double UBX_P2_40 = 9.094947017729280E-13; // 2^-40
+        static constexpr double UBX_P2_43 = 1.136868377216160E-13; // 2^-43
+        static constexpr double UBX_P2_46 = 1.421085471520200E-14; // 2^-46
+        static constexpr double UBX_P2_48 = 3.552713678800501E-15; // 2^-48
+        static constexpr double UBX_P2_50 = 8.881784197001252E-16; // 2^-50
+        static constexpr double UBX_P2_55 = 2.775557561562891E-17; // 2^-55
         static constexpr double P2_59 = 1.734723475976810E-18; // 2^-59
         static constexpr double P2_66 = 1.355252715606881E-20; // 2^-66
 

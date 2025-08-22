@@ -33,8 +33,14 @@ add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_DIR}/src/ublox_driver.cpp
                                ${PROJECT_SOURCE_DIR}/src/ublox_message_processor.cpp
                                ${PROJECT_SOURCE_DIR}/src/file_loader.cpp
                                ${PROJECT_SOURCE_DIR}/src/file_dumper.cpp
+                               ${PROJECT_SOURCE_DIR}/src/rtcm_handler.cpp
                                ${PROJECT_SOURCE_DIR}/src/serial_handler.cpp
                                ${PROJECT_SOURCE_DIR}/src/socket_handler.cpp
+                               ${PROJECT_SOURCE_DIR}/third_party/RTKLIB/src/rtcm.c
+                               ${PROJECT_SOURCE_DIR}/third_party/RTKLIB/src/rtcm2.c
+                               ${PROJECT_SOURCE_DIR}/third_party/RTKLIB/src/rtcm3.c
+                               ${PROJECT_SOURCE_DIR}/third_party/RTKLIB/src/rtcm3e.c
+                               ${PROJECT_SOURCE_DIR}/third_party/RTKLIB/src/rtkcmn.c
                                ${PROJECT_SOURCE_DIR}/third_party/yaml/Yaml.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GLOG_LIBRARIES})
 

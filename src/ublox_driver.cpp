@@ -31,6 +31,7 @@
 #include <ros/ros.h>
 
 #include "parameter_manager.hpp"
+#include "rtcm_handler.hpp"
 #include "serial_handler.hpp"
 #include "socket_handler.hpp"
 #include "file_dumper.hpp"
@@ -119,6 +120,7 @@ int main(int argc, char **argv)
     ParameterManager &pm(ParameterManager::getInstance());
     pm.read_parameter(config_filepath);
 
+    std::shared_ptr<RtcmHandler> rtcm;
     std::shared_ptr<SerialHandler> serial;
     std::shared_ptr<SocketHandler> socket;
     std::shared_ptr<FileLoader> file_loader;
@@ -154,6 +156,8 @@ int main(int argc, char **argv)
         {
             socket.reset(new SocketHandler("localhost", pm.rtcm_tcp_port));
             socket->addCallback(std::bind(&SerialHandler::writeRaw, serial.get(), 
+                std::placeholders::_1, std::placeholders::_2, pm.IO_TIMEOUT_MS));
+            socket->addCallback(std::bind(&RtcmHandler::processRtcm, rtcm.get(),
                 std::placeholders::_1, std::placeholders::_2, pm.IO_TIMEOUT_MS));
             socket->startRead();
         }
