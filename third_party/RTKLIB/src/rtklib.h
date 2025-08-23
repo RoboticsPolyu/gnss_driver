@@ -154,7 +154,8 @@ extern "C" {
 
 
 #ifndef NFREQ
-#define NFREQ       3                   /* number of carrier frequencies */
+#define NFREQ       5                   /* number of carrier frequencies */ 
+/* L1, L2, L5, E1, E5a for multi-GNSS */
 #endif
 #define NFREQGLO    2                   /* number of carrier frequencies of GLONASS */
 
