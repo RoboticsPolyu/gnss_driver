@@ -154,6 +154,7 @@ int main(int argc, char **argv)
         
         if (pm.input_rtcm)
         {
+            rtcm.reset(new RtcmHandler(nh));
             socket.reset(new SocketHandler("localhost", pm.rtcm_tcp_port));
             socket->addCallback(std::bind(&SerialHandler::writeRaw, serial.get(), 
                 std::placeholders::_1, std::placeholders::_2, pm.IO_TIMEOUT_MS));

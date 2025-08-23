@@ -32,18 +32,43 @@
 #undef D2R
 #endif
 
+#include <ros/ros.h>
+#include <gnss_comm/gnss_constant.hpp>
+#include <gnss_comm/gnss_utility.hpp>
+#include <gnss_comm/gnss_ros.hpp>
+
 #include "parameter_manager.hpp"
 
 class RtcmHandler
 {
     public:
-        RtcmHandler();
+        RtcmHandler(ros::NodeHandle& nh);
         RtcmHandler(const RtcmHandler&) = delete;
         RtcmHandler& operator=(const RtcmHandler&) = delete;
         ~RtcmHandler();
         void processRtcm(const uint8_t *data, size_t len, uint32_t timeout_ms);
 
     private:
+        gnss_comm::GnssMeasMsg meas2msg(const obs_t *meas);
+
+        template <typename T>
+        std::vector<T> array_to_vector(const T* arr, size_t size) 
+        {
+            return std::vector<T>(arr, arr + size);
+        }
+
+        double code_to_freq_hz(unsigned char code, unsigned char sat);
+
+        template <typename T_out, typename T_in>
+        std::vector<T_out> array_to_vector_with_conversion(const T_in* arr, size_t size, T_out (*convert)(T_in)) {
+            std::vector<T_out> result(size);
+            std::transform(arr, arr + size, result.begin(), convert);
+            return result;
+        }
+
+        ros::NodeHandle nh_;
+        ros::Publisher pub_range_meas_, pub_ephem_, pub_glo_ephem_, pub_iono_;
+
         rtcm_t rtcm{0};
 };
 
