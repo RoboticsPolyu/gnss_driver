@@ -50,6 +50,8 @@ class RtcmHandler
 
     private:
         gnss_comm::GnssMeasMsg meas2msg(const obs_t *meas);
+        gnss_comm::GnssEphemMsg eph2msg(const eph_t *eph);
+        gnss_comm::GnssGloEphemMsg glo_eph2msg(const geph_t *geph);
 
         template <typename T>
         std::vector<T> array_to_vector(const T* arr, size_t size) 
@@ -67,7 +69,7 @@ class RtcmHandler
         }
 
         ros::NodeHandle nh_;
-        ros::Publisher pub_range_meas_, pub_ephem_, pub_glo_ephem_, pub_iono_;
+        ros::Publisher pub_range_meas_, pub_ephem_, pub_glo_ephem_, pub_iono_, pub_station_;
 
         rtcm_t rtcm{0};
 };

@@ -28,7 +28,7 @@ RtcmHandler::RtcmHandler(ros::NodeHandle& nh) :
     pub_ephem_ = nh_.advertise<gnss_comm::GnssEphemMsg>("base_ephem", 100);
     pub_glo_ephem_ = nh_.advertise<gnss_comm::GnssGloEphemMsg>("base_glo_ephem", 100);
     pub_iono_ = nh_.advertise<gnss_comm::StampedFloat64Array>("base_iono_params", 100);
-
+    pub_station_ = nh_.advertise<gnss_comm::GnssAntennaPosition>("base_station", 100);
     init_rtcm(&rtcm);
 }
 
@@ -76,6 +76,7 @@ void RtcmHandler::processRtcm(const uint8_t *data, size_t len, uint32_t timeout_
 {
     obs_t *obs;
     nav_t *nav;
+    sta_t *sta;
     int ret = 0;
     std::cout << "processRtcm - " << len << std::endl;
 
@@ -87,10 +88,11 @@ void RtcmHandler::processRtcm(const uint8_t *data, size_t len, uint32_t timeout_
         ret = input_rtcm3(&rtcm, byte);
         obs = &rtcm.obs; /* observation data */
         nav = &rtcm.nav; /* satellite ephemerides */
+        sta = &rtcm.sta;
 
         if (ret == 1) 
         { /* Observation data - New epoch */
-            std::cout << " Observation data - New epoch " << std::endl;
+            std::cout << " rtcm - Observation data - New epoch " << std::endl;
             gnss_comm::GnssMeasMsg gnss_meas_msg;
             gnss_meas_msg = meas2msg(obs);
             pub_range_meas_.publish(gnss_meas_msg);
@@ -99,8 +101,80 @@ void RtcmHandler::processRtcm(const uint8_t *data, size_t len, uint32_t timeout_
         {
             continue;
         }
-        else if (ret > 1) 
+        else if (ret == 2) 
         { /* ephemeris */
+            std::cout << " rtcm - Ephemeris " << std::endl;
+            int sys = satsys(rtcm.ephsat, NULL);
+            
+            if (sys == SYS_GLO) 
+            {
+                // GLONASS 星历
+                int prn;
+                satsys(rtcm.ephsat, &prn);
+                if (prn >= 1 && prn <= MAXPRNGLO) 
+                {
+                    // 发布GLONASS星历
+                    geph_t *geph = &nav->geph[prn-1];
+                    if (geph->tof.time != 0) 
+                    {
+                        gnss_comm::GnssGloEphemMsg glo_ephem_msg = glo_eph2msg(geph);
+                        pub_glo_ephem_.publish(glo_ephem_msg);
+                        std::cout << "Published GLONASS ephemeris for PRN: " << prn << std::endl;
+                    }
+                }
+            }
+            else 
+            {
+                // GPS, Galileo, BDS 等系统的广播星历
+                eph_t *eph = &nav->eph[rtcm.ephsat-1];
+                if (eph->ttr.time != 0) 
+                {
+                    gnss_comm::GnssEphemMsg ephem_msg = eph2msg(eph);
+                    pub_ephem_.publish(ephem_msg);
+                    std::cout << "Published ephemeris for SAT: " << rtcm.ephsat << std::endl;
+                }
+            }
+            
+            // 检查并发布电离层参数
+            if (nav->ion_gps[0] != 0.0 || nav->ion_gal[0] != 0.0 || 
+                nav->ion_qzs[0] != 0.0 || nav->ion_cmp[0] != 0.0) 
+            {
+                gnss_comm::StampedFloat64Array iono_msg;
+                iono_msg.header.stamp = ros::Time::now();
+                
+                // 添加GPS电离层参数（8参数）
+                for (int i = 0; i < 8; i++) {
+                    iono_msg.data.push_back(nav->ion_gps[i]);
+                }
+                
+                // 可以添加其他系统的电离层参数
+                pub_iono_.publish(iono_msg);
+                std::cout << "Published ionosphere parameters" << std::endl;
+            }
+        }
+        else if (ret==3) { /* sbas message */
+            std::cout << " rtcm - sbas message " << std::endl;
+        }
+        else if (ret==9) { /* ion/utc parameters */
+            std::cout << " rtcm - ion/utc parameters " << std::endl;
+        }
+        else if (ret==5) { /* antenna postion parameters */
+            std::cout << " rtcm - Antenna postion parameters " << std::endl;
+            gnss_comm::GnssAntennaPosition ant_msg;
+            ant_msg.header.stamp = ros::Time::now();
+            ant_msg.pos.push_back(sta->pos[0]);
+            ant_msg.pos.push_back(sta->pos[1]);
+            ant_msg.pos.push_back(sta->pos[2]);
+            pub_station_.publish(ant_msg);
+        }
+        else if (ret==7) { /* dgps correction */
+            std::cout << " rtcm - dgps correction " << std::endl;
+        }
+        else if (ret==10) { /* ssr message */
+            std::cout << " rtcm - ssr message " << std::endl;
+        }
+        else if (ret==31) { /* lex message */
+            std::cout << " rtcm - lex message " << std::endl;
         }
         else if (ret == -1) 
         { /* error */
@@ -173,4 +247,85 @@ double RtcmHandler::code_to_freq_hz(unsigned char code, unsigned char sat) {
         default:
             return 0.0;
     }
+}
+
+gnss_comm::GnssEphemMsg RtcmHandler::eph2msg(const eph_t *eph)
+{
+    gnss_comm::GnssEphemMsg ephem_msg;
+    
+    int32_t week = 0;
+    double tow = 0.0;
+    ephem_msg.sat = eph->sat;
+    tow = time2gpst(eph->ttr, &week);
+    ephem_msg.ttr.week = week;
+    ephem_msg.ttr.tow = tow;
+    tow = time2gpst(eph->toe, &week);
+    ephem_msg.toe.week = week;
+    ephem_msg.toe.tow = tow;
+    tow = time2gpst(eph->toc, &week);
+    ephem_msg.toc.week = week;
+    ephem_msg.toc.tow = tow;
+    ephem_msg.toe_tow = eph->toes;
+    ephem_msg.week = eph->week;
+    ephem_msg.iode = eph->iode;
+    ephem_msg.iodc = eph->iodc;
+    ephem_msg.health = eph->svh;
+    ephem_msg.code = eph->code;
+    ephem_msg.ura = eph->sva;
+    ephem_msg.A = eph->A;
+    ephem_msg.e = eph->e;
+    ephem_msg.i0 = eph->i0;
+    ephem_msg.omg = eph->omg;
+    ephem_msg.OMG0 = eph->OMG0;
+    ephem_msg.M0 = eph->M0;
+    ephem_msg.delta_n = eph->deln;
+    ephem_msg.OMG_dot = eph->OMGd;
+    ephem_msg.i_dot = eph->idot;
+    ephem_msg.cuc = eph->cuc;
+    ephem_msg.cus = eph->cus;
+    ephem_msg.crc = eph->crc;
+    ephem_msg.crs = eph->crs;
+    ephem_msg.cic = eph->cic;
+    ephem_msg.cis = eph->cis;
+    ephem_msg.af0 = eph->f0;
+    ephem_msg.af1 = eph->f1;
+    ephem_msg.af2 = eph->f2;
+    ephem_msg.tgd0 = eph->tgd[0];
+    ephem_msg.tgd1 = eph->tgd[1];
+    ephem_msg.A_dot = eph->Adot;
+    ephem_msg.n_dot = eph->ndot;
+        
+    return ephem_msg;
+}
+
+gnss_comm::GnssGloEphemMsg RtcmHandler::glo_eph2msg(const geph_t *geph)
+{
+    gnss_comm::GnssGloEphemMsg glo_ephem_msg;
+    int32_t week = 0;
+    double tow = 0.0;
+    glo_ephem_msg.sat = geph->sat;
+    tow = time2gpst(geph->tof, &week); /* message frame time (gpst) */
+    glo_ephem_msg.ttr.week = week;
+    glo_ephem_msg.ttr.tow = tow;
+    tow = time2gpst(geph->toe, &week); /* epoch of epherides (gpst) */
+    glo_ephem_msg.toe.week = week;
+    glo_ephem_msg.toe.tow = tow;
+    glo_ephem_msg.freqo = geph->frq;
+    glo_ephem_msg.iode = geph->iode;
+    glo_ephem_msg.health = geph->svh;
+    glo_ephem_msg.age = geph->age;
+    glo_ephem_msg.ura = geph->sva;
+    glo_ephem_msg.pos_x = geph->pos[0];
+    glo_ephem_msg.pos_y = geph->pos[1];
+    glo_ephem_msg.pos_z = geph->pos[2];
+    glo_ephem_msg.vel_x = geph->vel[0];
+    glo_ephem_msg.vel_y = geph->vel[1];
+    glo_ephem_msg.vel_z = geph->vel[2];
+    glo_ephem_msg.acc_x = geph->acc[0];
+    glo_ephem_msg.acc_y = geph->acc[1];
+    glo_ephem_msg.acc_z = geph->acc[2];
+    glo_ephem_msg.tau_n = geph->taun;
+    glo_ephem_msg.gamma = geph->gamn;
+    glo_ephem_msg.delta_tau_n = geph->dtaun;
+    return glo_ephem_msg;
 }
